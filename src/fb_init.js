@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-
+import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
   apiKey: "AIzaSyBaedlAbra_tdNHO_JUHcgrexSzk9gNrvc",
   authDomain: "playground-app-b76a2.firebaseapp.com",
@@ -12,3 +12,4 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const authService = getAuth();
+export const dbService = getFirestore();
