@@ -1,24 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { dbService } from "../fb_init";
-import { addDoc, collection, getDocs } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { async } from "@firebase/util";
+import Review from "../components/Review";
 
-const Home = () => {
+const Home = ({ userObj }) => {
   const [review, setReview] = useState("");
   const [reviews, setReviews] = useState([]);
-  const getReview = async () => {
-    const dbReviews = await getDocs(collection(dbService, "Reviews"));
-    dbReviews.forEach((document) => {
-      const reviewObject = {
-        ...document.data(),
-        id: document.id,
-      };
-      console.log(document.id, " => ", document.data());
-      setReviews((prev) => [reviewObject, ...prev]);
-    });
-  };
+
   useEffect(() => {
-    getReview();
+    const q = query(
+      collection(dbService, "Reviews"),
+      orderBy("createdAt", "desc")
+    );
+    onSnapshot(q, (snapshot) => {
+      const reviewArray = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setReviews(reviewArray);
+    });
   }, []);
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -26,8 +35,8 @@ const Home = () => {
       const doc = await addDoc(collection(dbService, "Reviews"), {
         review,
         createdAt: Date.now(),
+        creatorId: userObj.uid,
       });
-      console.log("This review written with ID: ", doc.id);
     } catch (error) {
       console.log("Error! :", error);
     }
@@ -50,9 +59,11 @@ const Home = () => {
       </form>
       <div>
         {reviews.map((review) => (
-          <div key={review.id}>
-            <h4>{review.review}</h4>
-          </div>
+          <Review
+            key={review.id}
+            reviewObj={review}
+            isOwner={review.creatorId === userObj.uid}
+          />
         ))}
       </div>
     </div>
