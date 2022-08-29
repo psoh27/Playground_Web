@@ -15,6 +15,7 @@ import Review from "../components/Review";
 const Home = ({ userObj }) => {
   const [review, setReview] = useState("");
   const [reviews, setReviews] = useState([]);
+  const [imgFile, setimgFile] = useState();
 
   useEffect(() => {
     const q = query(
@@ -45,7 +46,19 @@ const Home = ({ userObj }) => {
   const onChange = (e) => {
     setReview(e.target.value);
   };
-  console.log(reviews);
+  const onFileChange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onloadend = (eFinished) => {
+      setimgFile(eFinished.currentTarget.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onCancleImg = () => {
+    setimgFile(null);
+  };
+
   return (
     <div>
       <form onSubmit={onSubmit}>
@@ -55,7 +68,14 @@ const Home = ({ userObj }) => {
           value={review}
           placeholder="리뷰를 입력하세요! (일반 리뷰 등록 시 100원, 사진 리뷰 등록시 200원 적립됩니다.)"
         />
+        <input type="file" accept="image/*" onChange={onFileChange} />
         <input type="submit" value="등록" />
+        {imgFile && (
+          <div>
+            <img src={imgFile} width="400px" height="400px" />
+            <button onClick={onCancleImg}>취소</button>
+          </div>
+        )}
       </form>
       <div>
         {reviews.map((review) => (
