@@ -1,5 +1,6 @@
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { dbService } from "../fb_init";
+import { dbService, storageService } from "../fb_init";
+import { deleteObject, ref } from "firebase/storage";
 import React, { useState } from "react";
 import { async } from "@firebase/util";
 
@@ -11,6 +12,9 @@ const Review = ({ reviewObj, isOwner }) => {
     const right = window.confirm("정말로 이 글을 삭제할까요?");
     if (right) {
       await deleteDoc(ReviewText);
+      if (reviewObj.attachmentURL !== "") {
+        await deleteObject(ref(storageService, reviewObj.attachmentURL));
+      }
     }
   };
   const toggleEdit = () => {
@@ -40,6 +44,9 @@ const Review = ({ reviewObj, isOwner }) => {
       ) : (
         <>
           <h4>{reviewObj.review}</h4>
+          {reviewObj.attachmentURL && (
+            <img src={reviewObj.attachmentURL} width="400px" height="400px" />
+          )}
           {isOwner && (
             <>
               <button onClick={toggleEdit}>수정</button>
