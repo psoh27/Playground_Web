@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { dbService } from "../fb_init";
+import React, { useEffect, useRef, useState } from "react";
+import { dbService, storageService } from "../fb_init";
+import { async } from "@firebase/util";
+import Review from "../components/Review";
+import { uploadString, ref, getDownloadURL } from "firebase/storage";
+import { v4 as uuidv4 } from "uuid"; //식별자 아이디를 생성해준다.
 import {
   addDoc,
   collection,
@@ -9,13 +13,12 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-import { async } from "@firebase/util";
-import Review from "../components/Review";
 
 const Home = ({ userObj }) => {
   const [review, setReview] = useState("");
   const [reviews, setReviews] = useState([]);
-  const [imgFile, setimgFile] = useState();
+  const [attachment, setAttachment] = useState("");
+  const fileInput = useRef();
 
   useEffect(() => {
     const q = query(
@@ -32,16 +35,25 @@ const Home = ({ userObj }) => {
   }, []);
   const onSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const doc = await addDoc(collection(dbService, "Reviews"), {
-        review,
-        createdAt: Date.now(),
-        creatorId: userObj.uid,
-      });
-    } catch (error) {
-      console.log("Error! :", error);
+    let attachmentURL = "";
+    if (attachment !== "") {
+      const attachmentRef = ref(storageService, `${userObj.uid}/${uuidv4()}`);
+      const response = await uploadString(
+        attachmentRef,
+        attachment,
+        "data_url"
+      );
+      attachmentURL = await getDownloadURL(response.ref);
     }
+    const replyObj = {
+      review,
+      createdAt: Date.now(),
+      creatorId: userObj.uid,
+      attachmentURL,
+    };
+    await addDoc(collection(dbService, "Reviews"), replyObj);
     setReview("");
+    setAttachment("");
   };
   const onChange = (e) => {
     setReview(e.target.value);
@@ -50,13 +62,14 @@ const Home = ({ userObj }) => {
     const file = e.target.files[0];
     const reader = new FileReader();
     reader.onloadend = (eFinished) => {
-      setimgFile(eFinished.currentTarget.result);
+      setAttachment(eFinished.currentTarget.result);
     };
     reader.readAsDataURL(file);
   };
 
   const onCancleImg = () => {
-    setimgFile(null);
+    setAttachment("");
+    fileInput.current.value = "";
   };
 
   return (
@@ -68,11 +81,16 @@ const Home = ({ userObj }) => {
           value={review}
           placeholder="리뷰를 입력하세요! (일반 리뷰 등록 시 100원, 사진 리뷰 등록시 200원 적립됩니다.)"
         />
-        <input type="file" accept="image/*" onChange={onFileChange} />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={onFileChange}
+          ref={fileInput}
+        />
         <input type="submit" value="등록" />
-        {imgFile && (
+        {attachment && (
           <div>
-            <img src={imgFile} width="400px" height="400px" />
+            <img src={attachment} width="400px" height="400px" />
             <button onClick={onCancleImg}>취소</button>
           </div>
         )}
