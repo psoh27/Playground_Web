@@ -5,14 +5,17 @@ import Home from "../routes/Home";
 import Mypage from "../routes/Mypage";
 import Navigation from "./Navigation";
 
-const AppRouter = ({ isLogin, userObj }) => (
+const AppRouter = ({ refreshUser, isLogin, userObj }) => (
   <Router>
-    {isLogin && <Navigation />}
+    {isLogin && <Navigation userObj={userObj} />}
     <Routes>
       {isLogin ? (
         <>
           <Route path="/" element={<Home userObj={userObj} />}></Route>
-          <Route path="/Mypage" element={<Mypage />}></Route>
+          <Route
+            path="/Mypage"
+            element={<Mypage userObj={userObj} refreshUser={refreshUser} />}
+          ></Route>
         </>
       ) : (
         <Route path="/" element={<Login />}></Route>
